@@ -7,30 +7,34 @@ engine = create_engine(engine_data)
 session = Session(bind=engine)
 
 
-class DataBase:
+class ControllerDataBase:
     @staticmethod
     def group_less_or_equal_students(count: int):
-        groups = select(GroupModel).join(StudentModel).group_by(GroupModel.name) \
+        query_groups = select(GroupModel.name).join(StudentModel).group_by(GroupModel.name) \
             .having(func.count(StudentModel.id) <= count)
 
-        groups = session.scalars(groups)
+        fetched_groups = session.execute(query_groups).all()
+
+        groups = {'groups': [{'name': name[0]} for name in fetched_groups]}
 
         return groups
 
     @staticmethod
     def students_by_course_name(course_name):
-        students = select(StudentModel) \
+        query_students = select(StudentModel.id) \
             .join(student_course) \
             .join(CourseModel) \
             .group_by(StudentModel.id) \
             .filter(CourseModel.name == course_name)
 
-        students = session.scalars(students)
+        fetched_students = session.execute(query_students).all()
+
+        students = {'students': [{'id': student.id} for student in fetched_students]}
 
         return students
 
     @staticmethod
-    def create_student(first_name: str, last_name: str, courses: list, group_name=None):
+    def create_student(first_name: str, last_name: str, courses: list, group_name=None) -> bool:
         if isinstance(first_name, str) and isinstance(last_name, str) \
                 and len(courses) <= 3 and isinstance(group_name, str) or group_name is None:
 
@@ -45,37 +49,59 @@ class DataBase:
             try:
                 session.add(student)
                 session.commit()
+
+                return True
+
             except Exception as e:
                 print(e)
                 session.rollback()
 
+                return False
+
     @staticmethod
     def delete_student(student_id: int):
         if isinstance(student_id, int):
-            session.delete(session.scalar(select(StudentModel).filter(StudentModel.id == 21)))
+            session.delete(session.scalar(select(StudentModel).filter(StudentModel.id == student_id)))
             session.commit()
 
     @staticmethod
-    def add_course_to_student(student_id: int, course_name: str):
-        course = DataBase.__scalar_course_by_course_name(course_name)
-        student = DataBase.__scalar_student_by_id(student_id)
+    def add_course_to_student(student_id: int, course_name: str) -> bool:
+        course = ControllerDataBase.__scalar_course_by_course_name(course_name)
+        student = ControllerDataBase.__scalar_student_by_id(student_id)
 
         if course in student.courses:
             raise ValueError(f'Student (id {student.id}) already attend course "{course.name}"')
 
-        student.courses.append(course)
-        session.commit()
+        try:
+            student.courses.append(course)
+            session.commit()
+
+            return True
+
+        except Exception as e:
+            print(e)
+            session.rollback()
+
+            return False
 
     @staticmethod
     def delete_course_from_student(student_id: int, course_name: str):
-        course = DataBase.__scalar_course_by_course_name(course_name)
-        student = DataBase.__scalar_student_by_id(student_id)
+        course = ControllerDataBase.__scalar_course_by_course_name(course_name)
+        student = ControllerDataBase.__scalar_student_by_id(student_id)
 
         if course not in student.courses:
             raise ValueError(f'Student (id {student.id}) doesnt attend course "{course.name}"')
 
-        student.courses.remove(course)
-        session.commit()
+        try:
+            student.courses.remove(course)
+            session.commit()
+
+            return True
+
+        except Exception as e:
+            print(e)
+
+            return False
 
     @staticmethod
     def __scalar_course_by_course_name(course_name: str):
@@ -96,3 +122,6 @@ class DataBase:
             raise ValueError(f'Student with id {student_id} doesnt exist')
 
         return student
+
+
+controller_db = ControllerDataBase()

@@ -34,7 +34,7 @@ class CreateDBData:
     def create_students(cls):
         students = []
 
-        for _ in range(20):
+        for _ in range(50):
             name = (choice(cls.f_name), choice(cls.l_name))
             students.append(name)
 

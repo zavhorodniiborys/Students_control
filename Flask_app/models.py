@@ -20,9 +20,6 @@ class CourseModel(Base):
 
     students: Mapped[List['StudentModel']] = relationship(secondary=student_course, back_populates='courses')
 
-    def __str__(self):
-        return f'{self.name}'
-
 
 class StudentModel(Base):
     __tablename__ = 'student'
@@ -40,8 +37,3 @@ class GroupModel(Base):
     __tablename__ = 'group'
 
     name: Mapped[str] = mapped_column(String(5), primary_key=True)
-
-
-
-
-
