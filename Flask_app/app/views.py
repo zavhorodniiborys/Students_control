@@ -35,9 +35,9 @@ class Courses(Resource):
         remove_student = controller_db.delete_course_from_student(student_id=student_id, course_name=course_name)
 
         if remove_student:
-            return 'Student successful removed'
+            return 'Student successful removed', 200
         else:
-            return 'Error while removing student'
+            return 'Error while removing student', 400
 
 
 class Groups(Resource):
@@ -46,6 +46,7 @@ class Groups(Resource):
 
         response = make_response(jsonify(groups))
         response.headers['Content-Type'] = 'application/json'
+        response.status_code = 200
 
         return response
 
@@ -56,6 +57,7 @@ class Students(Resource):
 
         response = make_response(jsonify(students))
         response.headers['Content-Type'] = 'application/json'
+        response.status_code = 200
 
         return response
 
@@ -70,13 +72,14 @@ class Students(Resource):
                                                    courses=courses, group_name=group)
 
         if new_student:
-            return 'Student successful added'
+            return 'Student successful added', 201
         else:
-            return 'Error while adding student'
+            return 'Error while adding student', 400
 
     def delete(self, student_id):
         controller_db.delete_student(student_id)
-        return 'Deleted successful'
+
+        return 'Deleted successful', 201
 
     def put(self, student_id):
         args = parser.parse_args()
@@ -85,12 +88,13 @@ class Students(Resource):
         update_student = controller_db.add_course_to_student(student_id=student_id, course_name=course)
 
         if update_student:
-            return 'Course successful added'
+            return 'Course successful added', 201
         else:
-            return 'Error while adding course'
+            return 'Error while adding course', 400
 
 
-api.add_resource(Courses, '/courses/<course_name>/remove_student/<int:student_id>')
+api.add_resource(Courses,
+                 '/courses/<course_name>/remove_student/<int:student_id>')
 
 api.add_resource(Groups,
                  '/groups/<int:student_count>')
