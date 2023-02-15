@@ -2,8 +2,8 @@ from random import choice, randint
 from string import ascii_uppercase
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from models import Base, StudentModel, GroupModel, CourseModel
-from engine_data import engine_data
+from Flask_app.models import Base, StudentModel, GroupModel, CourseModel
+from Flask_app.engine_data import engine_data
 
 
 class CreateDBData:

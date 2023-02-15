@@ -1,10 +1,10 @@
 from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import Session
-from models import StudentModel, CourseModel, GroupModel, student_course
-from engine_data import engine_data
+from .models import StudentModel, CourseModel, GroupModel, student_course
+from .engine_data import engine_data
 
 engine = create_engine(engine_data)
-session = Session(bind=engine)
+session = Session(bind=create_engine(engine_data))
 
 
 class ControllerDataBase:

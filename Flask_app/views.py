@@ -1,6 +1,6 @@
 from flask import jsonify, Blueprint, make_response
 from flask_restful import Resource, Api, reqparse
-from controller import controller_db
+from Flask_app.controller import controller_db
 
 controller_blueprint = Blueprint('api_v1', __name__)
 api = Api(controller_blueprint)
