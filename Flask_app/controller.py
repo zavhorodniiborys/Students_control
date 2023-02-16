@@ -10,7 +10,7 @@ session = Session(bind=create_engine(engine_data))
 class ControllerDataBase:
     @staticmethod
     def group_less_or_equal_students(count: int):
-        query_groups = select(GroupModel.name).join(StudentModel).group_by(GroupModel.name) \
+        query_groups = select(GroupModel.name).outerjoin(StudentModel).group_by(GroupModel.name) \
             .having(func.count(StudentModel.id) <= count)
 
         fetched_groups = session.execute(query_groups).all()
@@ -56,13 +56,19 @@ class ControllerDataBase:
                 print(e)
                 session.rollback()
 
-                return False
+        return False
 
     @staticmethod
     def delete_student(student_id: int):
         if isinstance(student_id, int):
-            session.delete(session.scalar(select(StudentModel).filter(StudentModel.id == student_id)))
-            session.commit()
+            student = session.scalar(select(StudentModel).filter(StudentModel.id == student_id))
+            if student:
+                session.delete(student)
+                session.commit()
+
+                return True
+
+        return False
 
     @staticmethod
     def add_course_to_student(student_id: int, course_name: str) -> bool:
@@ -86,8 +92,14 @@ class ControllerDataBase:
 
     @staticmethod
     def delete_course_from_student(student_id: int, course_name: str):
-        course = ControllerDataBase.__scalar_course_by_course_name(course_name)
-        student = ControllerDataBase.__scalar_student_by_id(student_id)
+        try:
+            course = ControllerDataBase.__scalar_course_by_course_name(course_name)
+            student = ControllerDataBase.__scalar_student_by_id(student_id)
+
+        except Exception as e:
+            print(e)
+
+            return False
 
         if course not in student.courses:
             raise ValueError(f'Student (id {student.id}) doesnt attend course "{course.name}"')

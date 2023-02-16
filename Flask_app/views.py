@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint, make_response
+from flask import jsonify, Blueprint, make_response, request
 from flask_restful import Resource, Api, reqparse
 from Flask_app.controller import controller_db
 
@@ -22,16 +22,22 @@ def validate_name_length(min_len, max_len):
 
 
 parser = reqparse.RequestParser()
-parser.add_argument('first_name', type=validate_name_length(1, 32), trim=True, location='form', help="Student's first name")
-parser.add_argument('last_name', type=validate_name_length(1, 32), trim=True, location='form', help="Student's last name")
-parser.add_argument('course', location='form', help="Student's course.", required=True,
+parser.add_argument('student_id', type=int, trim=True, location='form', help="Student`s id")
+parser.add_argument('first_name', type=validate_name_length(1, 32), trim=True, location='form',
+                    help="Student's first name")
+parser.add_argument('last_name', type=validate_name_length(1, 32), trim=True, location='form',
+                    help="Student's last name")
+parser.add_argument('course', location='form', help="Student's course.",
                     choices=('Math', 'Biology', 'Physik', 'Chemistry', 'Literature',
                              'Psychology', 'Programming', 'Cybersecurity', 'Engineering', 'Law'))
 parser.add_argument('group', type=validate_name_length(5, 5), trim=True, location='form', help="Student's group.")
 
 
 class Courses(Resource):
-    def put(self, course_name, student_id):
+    def put(self, course_name):
+        args = parser.parse_args()
+        student_id = args['student_id']
+
         remove_student = controller_db.delete_course_from_student(student_id=student_id, course_name=course_name)
 
         if remove_student:
@@ -52,7 +58,10 @@ class Groups(Resource):
 
 
 class Students(Resource):
-    def get(self, course_name):
+    def get(self):
+        args = parser.parse_args()
+        course_name = args['course_name']
+
         students = controller_db.students_by_course_name(course_name)
 
         response = make_response(jsonify(students))
@@ -76,10 +85,14 @@ class Students(Resource):
         else:
             return 'Error while adding student', 400
 
-    def delete(self, student_id):
-        controller_db.delete_student(student_id)
+    def delete(self):
+        args = parser.parse_args()
+        student_id = args['student_id']
 
-        return 'Deleted successful', 201
+        if controller_db.delete_student(student_id):
+            return 'Deleted successful', 201
+        else:
+            return 'No student with such id', 404
 
     def put(self, student_id):
         args = parser.parse_args()
@@ -93,14 +106,9 @@ class Students(Resource):
             return 'Error while adding course', 400
 
 
-api.add_resource(Courses,
-                 '/courses/<course_name>/remove_student/<int:student_id>')
+api.add_resource(Courses, '/courses/<course_name>/remove_student/<int:student_id>')
 
 api.add_resource(Groups,
                  '/groups/<int:student_count>')
 
-api.add_resource(Students,
-                 '/students/<course_name>',
-                 '/students/add',
-                 '/students/delete/<int:student_id>',
-                 '/students/<int:student_id>/add_course')
+api.add_resource(Students, '/students')
