@@ -82,6 +82,8 @@ class ControllerDataBase:
             student.courses.append(course)
             session.commit()
 
+            return True
+
         except Exception as e:
             session.rollback()
             print(e)
@@ -99,16 +101,6 @@ class ControllerDataBase:
 
             student.courses.remove(course)
             session.commit()
-
-        except Exception as e:
-            print(e)
-
-            return False
-
-        
-
-        try:
-            
 
             return True
 

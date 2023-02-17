@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch
-from sqlalchemy import create_engine, exc
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from Flask_app.controller import controller_db
 from Flask_app.models import Base, StudentModel, CourseModel, GroupModel
@@ -12,6 +12,7 @@ engine = create_engine('postgresql+psycopg2://boris:cool_pass@127.0.0.1:5432/tes
 @pytest.fixture(scope='module')
 def db_session(groups, courses):
     session = Session(bind=engine)
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     populate_test_db(session, groups=groups, courses=courses)
     yield session
@@ -19,16 +20,6 @@ def db_session(groups, courses):
     session.rollback()
     session.close()
     Base.metadata.drop_all(engine)
-
-
-@pytest.fixture(scope='class')
-def valid_students():
-    student = StudentModel(first_name='John',
-                           last_name='Doe',
-                           group_name='group_name',
-                           courses='students_courses')
-
-    return student
 
 
 @pytest.fixture(scope='module')
@@ -99,16 +90,17 @@ class TestControllerDataBase:
 
             assert res
 
-    @pytest.mark.parametrize('first_name, last_name, courses, group_name',
-                            ('Very very very long long long long name', 'Example', ['courses'], 'CB-30'),
-                            ('Test', 'Very very very long long long long name', ['courses'], 'CB-30'),
-                            ('Test', 'Very very very long long long long name', 'courses', 'CB-30'),
-                            ('Test', 'Very very very long long long long name', ['courses'], 'Wrong name'))
-    def test_create_student_error_first_name(self, db_session, first_name, last_name, courses, group_name):
+    @pytest.mark.parametrize('first_name, last_name, _courses, group_name', (
+            ('Very very very long long long long name', 'Example', ['courses'], 'CB-30'),
+            ('Test', 'Very very very long long long long name', ['courses'], 'CB-30'),
+            ('Test', 'Very very very long long long long name', 'courses', 'CB-30'),
+            ('Test', 'Very very very long long long long name', ['courses'], 'Wrong name')
+    ))
+    def test_create_student_error(self, db_session, first_name, last_name, _courses, group_name):
         with patch('Flask_app.controller.session', db_session):
             res = controller_db.create_student(first_name=first_name,
                                                last_name=last_name,
-                                               courses=courses,
+                                               courses=_courses,
                                                group_name=group_name)
 
             assert not res
@@ -132,30 +124,30 @@ class TestControllerDataBase:
 
             assert res
 
-    @pytest.mark.parametrize('student_id, course_name, exception',
-                            (2, 'Math', ValueError),
-                            (100, 'Math', exc.SQLAlchemyError),
-                            (2, 'Wrong_course_name', exc.SQLAlchemyError))
-    def test_add_course_to_student_error(self, db_session, student_id, course_name, exception):
-        with pytest.raises(exception):
-            with patch('Flask_app.controller.session', db_session):
-                res = controller_db.add_course_to_student(student_id=student_id, course_name=course_name)
+    @pytest.mark.parametrize('student_id, course_name', (
+            (2, 'Math'),
+            (100, 'Math'),
+            (2, 'Wrong_course_name')
+    ))
+    def test_add_course_to_student_error(self, db_session, student_id, course_name):
+        with patch('Flask_app.controller.session', db_session):
+            res = controller_db.add_course_to_student(student_id=student_id, course_name=course_name)
 
-                assert not res
+            assert not res
 
     def test_delete_course_from_student(self, db_session, student_id=2, course_name='Math'):
         with patch('Flask_app.controller.session', db_session):
-            res = controller_db.add_course_to_student(student_id=student_id, course_name=course_name) 
+            res = controller_db.delete_course_from_student(student_id=student_id, course_name=course_name)
 
             assert res
 
-    @pytest.mark.parametrize('student_id, course_name, exception',
-                            (2, 'Biology', ValueError),
-                            (100, 'Math', exc.SQLAlchemyError),
-                            (2, 'Wrong_course_name', exc.SQLAlchemyError))
-    def test_delete_course_from_student_error(self, db_session, student_id, course_name, exception):
-        with pytest.raises(exception):
-            with patch('Flask_app.controller.session', db_session):
-                res = controller_db.add_course_to_student(student_id=student_id, course_name=course_name) 
-        
-                assert not res
+    @pytest.mark.parametrize('student_id, course_name', (
+                             (2, 'Biology'),
+                             (100, 'Math'),
+                             (2, 'Wrong_course_name')
+    ))
+    def test_delete_course_from_student_error(self, db_session, student_id, course_name):
+        with patch('Flask_app.controller.session', db_session):
+            res = controller_db.delete_course_from_student(student_id=student_id, course_name=course_name)
+
+            assert not res

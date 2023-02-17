@@ -119,7 +119,7 @@ class CreateDBData:
 
 
         # I also tried this code, but it fills only 100 elements to DB. I have no idea why
-        # for _ in range(len(students)):
+        # for _ in range(students):
         #     cls.create_student_model(session=session, students=students, courses=courses)
 
 

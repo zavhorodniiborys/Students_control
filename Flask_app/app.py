@@ -1,5 +1,5 @@
 from flask import Flask
-from views import controller_blueprint
+from Flask_app.views import controller_blueprint
 
 app = Flask(__name__)
 app.register_blueprint(controller_blueprint)

@@ -1,4 +1,4 @@
-from flask import jsonify, Blueprint, make_response, request
+from flask import jsonify, Blueprint, make_response
 from flask_restful import Resource, Api, reqparse
 from Flask_app.controller import controller_db
 
@@ -34,20 +34,26 @@ parser.add_argument('group', type=validate_name_length(5, 5), trim=True, locatio
 
 
 class Courses(Resource):
-    def put(self, course_name):
+    @staticmethod
+    def put(course_name):
         args = parser.parse_args()
         student_id = args['student_id']
 
         remove_student = controller_db.delete_course_from_student(student_id=student_id, course_name=course_name)
 
         if remove_student:
-            return 'Student successful removed', 200
+            response = make_response('Student successful removed')
+            response.status_code = 200
         else:
-            return 'Error while removing student', 400
+            response = make_response('Error while removing student')
+            response.status_code = 400
+
+        return response
 
 
 class Groups(Resource):
-    def get(self, student_count):
+    @staticmethod
+    def get(student_count):
         groups = controller_db.group_less_or_equal_students(student_count)
 
         response = make_response(jsonify(groups))
@@ -58,10 +64,8 @@ class Groups(Resource):
 
 
 class Students(Resource):
-    def get(self):
-        args = parser.parse_args()
-        course_name = args['course_name']
-
+    @staticmethod
+    def get(course_name):
         students = controller_db.students_by_course_name(course_name)
 
         response = make_response(jsonify(students))
@@ -70,7 +74,8 @@ class Students(Resource):
 
         return response
 
-    def post(self):
+    @staticmethod
+    def post():
         args = parser.parse_args()
         first_name = args['first_name']
         last_name = args['last_name']
@@ -81,34 +86,46 @@ class Students(Resource):
                                                    courses=courses, group_name=group)
 
         if new_student:
-            return 'Student successful added', 201
+            response = make_response('Student successful added')
+            response.status_code = 201
         else:
-            return 'Error while adding student', 400
+            response = make_response('Error while adding student')
+            response.status_code = 400
 
-    def delete(self):
+        return response
+
+    @staticmethod
+    def delete():
         args = parser.parse_args()
         student_id = args['student_id']
 
         if controller_db.delete_student(student_id):
-            return 'Deleted successful', 201
+            response = make_response('Deleted successful')
+            response.status_code = 201
         else:
-            return 'No student with such id', 404
+            response = make_response('No student with such id')
+            response.status_code = 404
 
-    def put(self, student_id):
+        return response
+
+    @staticmethod
+    def put():
         args = parser.parse_args()
+        student_id = args['student_id']
         course = args['course']
 
         update_student = controller_db.add_course_to_student(student_id=student_id, course_name=course)
 
         if update_student:
-            return 'Course successful added', 201
+            response = make_response('Course successful added')
+            response.status_code = 201
         else:
-            return 'Error while adding course', 400
+            response = make_response('Error while adding course')
+            response.status_code = 400
+
+        return response
 
 
-api.add_resource(Courses, '/courses/<course_name>/remove_student/<int:student_id>')
-
-api.add_resource(Groups,
-                 '/groups/<int:student_count>')
-
-api.add_resource(Students, '/students')
+api.add_resource(Courses, '/courses/<course_name>/remove_student')
+api.add_resource(Groups, '/groups/<int:student_count>')
+api.add_resource(Students, '/students', '/students/<course_name>')
