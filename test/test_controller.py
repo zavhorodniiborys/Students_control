@@ -153,7 +153,7 @@ class TestControllerDataBase:
                             (2, 'Biology', ValueError),
                             (100, 'Math', exc.SQLAlchemyError),
                             (2, 'Wrong_course_name', exc.SQLAlchemyError))
-    def test_delete_course_from_student_error(self, student_id=1, course_name='Biology'):
+    def test_delete_course_from_student_error(self, db_session, student_id, course_name, exception):
         with pytest.raises(exception):
             with patch('Flask_app.controller.session', db_session):
                 res = controller_db.add_course_to_student(student_id=student_id, course_name=course_name) 
