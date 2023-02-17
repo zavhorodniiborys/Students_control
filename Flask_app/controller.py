@@ -72,21 +72,19 @@ class ControllerDataBase:
 
     @staticmethod
     def add_course_to_student(student_id: int, course_name: str) -> bool:
-        course = ControllerDataBase.__scalar_course_by_course_name(course_name)
-        student = ControllerDataBase.__scalar_student_by_id(student_id)
-
-        if course in student.courses:
-            raise ValueError(f'Student (id {student.id}) already attend course "{course.name}"')
-
         try:
+            course = ControllerDataBase.__scalar_course_by_course_name(course_name)
+            student = ControllerDataBase.__scalar_student_by_id(student_id)
+
+            if course in student.courses:
+                raise ValueError(f'Student (id {student.id}) already attend course "{course.name}"')
+
             student.courses.append(course)
             session.commit()
 
-            return True
-
         except Exception as e:
-            print(e)
             session.rollback()
+            print(e)
 
             return False
 
@@ -96,17 +94,21 @@ class ControllerDataBase:
             course = ControllerDataBase.__scalar_course_by_course_name(course_name)
             student = ControllerDataBase.__scalar_student_by_id(student_id)
 
+            if course not in student.courses:
+                raise ValueError(f'Student (id {student.id}) doesnt attend course "{course.name}"')
+
+            student.courses.remove(course)
+            session.commit()
+
         except Exception as e:
             print(e)
 
             return False
 
-        if course not in student.courses:
-            raise ValueError(f'Student (id {student.id}) doesnt attend course "{course.name}"')
+        
 
         try:
-            student.courses.remove(course)
-            session.commit()
+            
 
             return True
 
