@@ -2,8 +2,8 @@ from flask import jsonify, Blueprint, make_response
 from flask_restful import Resource, Api, reqparse
 from Flask_app.controller import controller_db
 
-controller_blueprint = Blueprint('api_v1', __name__)
-api = Api(controller_blueprint)
+controller_views_api = Blueprint('api_v1', __name__)
+api = Api(controller_views_api)
 
 
 def validate_name_length(min_len, max_len):
@@ -27,55 +27,64 @@ parser.add_argument('first_name', type=validate_name_length(1, 32), trim=True, l
                     help="Student's first name")
 parser.add_argument('last_name', type=validate_name_length(1, 32), trim=True, location='form',
                     help="Student's last name")
-parser.add_argument('course', location='form', help="Student's course.",
-                    choices=('Math', 'Biology', 'Physik', 'Chemistry', 'Literature',
-                             'Psychology', 'Programming', 'Cybersecurity', 'Engineering', 'Law'))
+parser.add_argument('course_id', type=int, location='form', help="Student's course.")
 parser.add_argument('group', type=validate_name_length(5, 5), trim=True, location='form', help="Student's group.")
 
 
-class Courses(Resource):
+class Base:
     @staticmethod
-    def put(course_name):
+    def create_response(status_code, message, content_type=None):
+        if content_type == 'application/json':
+            response = make_response(jsonify(message))
+            response.headers['Content-Type'] = 'application/json'
+
+        else:
+            response = make_response(message)
+
+        response.status_code = status_code
+
+        return response
+
+
+class Courses(Resource, Base):
+    @classmethod
+    def delete(cls):
         args = parser.parse_args()
         student_id = args['student_id']
+        course_id = args['course_id']
 
-        remove_student = controller_db.delete_course_from_student(student_id=student_id, course_name=course_name)
+        remove_student = controller_db.delete_course_from_student(student_id=student_id, course_id=course_id)
 
         if remove_student:
-            response = make_response('Student successful removed')
-            response.status_code = 200
+            response = cls.create_response(200, 'Student successful removed')
+
         else:
-            response = make_response('Error while removing student')
-            response.status_code = 400
+            response = cls.create_response(400, 'Error while removing student')
 
         return response
 
 
-class Groups(Resource):
-    @staticmethod
-    def get(student_count):
-        groups = controller_db.group_less_or_equal_students(student_count)
+class Groups(Resource, Base):
+    @classmethod
+    def get(cls, student_count):
+        groups = controller_db.groups_with_less_or_equal_students(student_count)
 
-        response = make_response(jsonify(groups))
-        response.headers['Content-Type'] = 'application/json'
-        response.status_code = 200
+        response = cls.create_response(200, groups, 'application/json')
 
         return response
 
 
-class Students(Resource):
-    @staticmethod
-    def get(course_name):
-        students = controller_db.students_by_course_name(course_name)
+class Students(Resource, Base):
+    @classmethod
+    def get(cls, course_id):
+        students = controller_db.students_by_course_id(course_id)
 
-        response = make_response(jsonify(students))
-        response.headers['Content-Type'] = 'application/json'
-        response.status_code = 200
+        response = cls.create_response(200, students, 'application/json')
 
         return response
 
-    @staticmethod
-    def post():
+    @classmethod
+    def post(cls):
         args = parser.parse_args()
         first_name = args['first_name']
         last_name = args['last_name']
@@ -86,46 +95,40 @@ class Students(Resource):
                                                    courses=courses, group_name=group)
 
         if new_student:
-            response = make_response('Student successful added')
-            response.status_code = 201
+            response = cls.create_response(201, 'Student successful added')
         else:
-            response = make_response('Error while adding student')
-            response.status_code = 400
+            response = cls.create_response(400, 'Error while adding student')
 
         return response
 
-    @staticmethod
-    def delete():
+    @classmethod
+    def delete(cls):
         args = parser.parse_args()
         student_id = args['student_id']
 
         if controller_db.delete_student(student_id):
-            response = make_response('Deleted successful')
-            response.status_code = 201
+            response = cls.create_response(201, 'Deleted successful')
         else:
-            response = make_response('No student with such id')
-            response.status_code = 404
+            response = cls.create_response(404, 'No student with such id')
 
         return response
 
-    @staticmethod
-    def put():
+    @classmethod
+    def put(cls):
         args = parser.parse_args()
         student_id = args['student_id']
-        course = args['course']
+        course = args['course_id']
 
-        update_student = controller_db.add_course_to_student(student_id=student_id, course_name=course)
+        update_student = controller_db.add_course_to_student(student_id=student_id, course_id=course)
 
         if update_student:
-            response = make_response('Course successful added')
-            response.status_code = 201
+            response = cls.create_response(201, 'Course successful added')
         else:
-            response = make_response('Error while adding course')
-            response.status_code = 400
+            response = cls.create_response(400, 'Error while adding course')
 
         return response
 
 
-api.add_resource(Courses, '/courses/<course_name>/remove_student')
+api.add_resource(Courses, '/courses')
 api.add_resource(Groups, '/groups/<int:student_count>')
-api.add_resource(Students, '/students', '/students/<course_name>')
+api.add_resource(Students, '/students', '/students/<int:course_id>')

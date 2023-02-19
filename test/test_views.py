@@ -17,7 +17,7 @@ class TestGroups:
         ]
     }
 
-    @patch('Flask_app.views.controller_db.group_less_or_equal_students', return_value=test_example)
+    @patch('Flask_app.views.controller_db.groups_with_less_or_equal_students', return_value=test_example)
     def test_get(self, patcher, client):
         with client:
             response = client.get('http://127.0.0.1:5000/groups/5')
