@@ -1,3 +1,4 @@
+from sqlalchemy import exc
 from flask import jsonify, Blueprint, make_response
 from flask_restful import Resource, Api, reqparse
 from Flask_app.controller import controller_db
@@ -67,7 +68,7 @@ class Courses(Resource, Base):
 class Groups(Resource, Base):
     @classmethod
     def get(cls, student_count):
-        groups = controller_db.groups_with_less_or_equal_students(student_count)
+        groups = controller_db.get_groups_with_less_or_equal_students(student_count)
 
         response = cls.create_response(200, groups, 'application/json')
 
@@ -88,7 +89,7 @@ class Students(Resource, Base):
         args = parser.parse_args()
         first_name = args['first_name']
         last_name = args['last_name']
-        courses = [args['course']]
+        courses = [args['course_id']]
         group = args['group']
 
         new_student = controller_db.create_student(first_name=first_name, last_name=last_name,
@@ -119,12 +120,12 @@ class Students(Resource, Base):
         student_id = args['student_id']
         course = args['course_id']
 
-        update_student = controller_db.add_course_to_student(student_id=student_id, course_id=course)
-
-        if update_student:
+        try:
+            controller_db.add_course_to_student(student_id=student_id, course_id=course)
             response = cls.create_response(201, 'Course successful added')
-        else:
-            response = cls.create_response(400, 'Error while adding course')
+
+        except exc.SQLAlchemyError as error:
+            response = cls.create_response(400, error.args[0])
 
         return response
 

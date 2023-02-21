@@ -9,7 +9,7 @@ session = Session(engine)
 
 class ControllerDataBase:
     @staticmethod
-    def groups_with_less_or_equal_students(count: int):
+    def get_groups_with_less_or_equal_students(count: int):
         query_groups = select(GroupModel.name).outerjoin(StudentModel).group_by(GroupModel.name) \
             .having(func.count(StudentModel.id) <= count)
 
@@ -38,7 +38,7 @@ class ControllerDataBase:
         if isinstance(first_name, str) and isinstance(last_name, str) \
                 and len(courses) <= 3 and isinstance(group_name, str) or group_name is None:
 
-            courses = select(CourseModel).filter(CourseModel.name.in_(courses))
+            courses = select(CourseModel).filter(CourseModel.id.in_(courses))
             courses = session.scalars(courses).all()
 
             student = StudentModel(first_name=first_name,
@@ -72,11 +72,10 @@ class ControllerDataBase:
         try:
             session.execute(add_course_query)
             session.commit()
-            return True
 
-        except exc.SQLAlchemyError:
+        except exc.SQLAlchemyError as error:
             session.rollback()
-            return False
+            raise error
 
     @staticmethod
     def delete_course_from_student(student_id: int, course_id: int):

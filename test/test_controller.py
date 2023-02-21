@@ -66,7 +66,7 @@ class TestControllerDataBase:
     ])
     def test_group_less_or_equal_students(self, db_session, count, expected_res):
         with patch('Flask_app.controller.session', db_session):
-            groups = controller_db.groups_with_less_or_equal_students(count)['groups']
+            groups = controller_db.get_groups_with_less_or_equal_students(count)['groups']
             names = [group['name'] for group in groups]
 
             assert sorted(names) == sorted(expected_res)

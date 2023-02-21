@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import String, ForeignKey, Table, Column
+from sqlalchemy import String, ForeignKey, Table, Column, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -26,8 +26,9 @@ class StudentModel(Base):
     __tablename__ = 'student'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    first_name: Mapped[str] = mapped_column(String(32))
-    last_name: Mapped[str] = mapped_column(String(32))
+    first_name: Mapped[str] = mapped_column(String(32), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(32), nullable=False)
+    marks: Mapped[int] = mapped_column(Integer, nullable=True)
 
     group_name: Mapped[Optional[str]] = mapped_column(ForeignKey('group.name', onupdate='CASCADE'))
 
