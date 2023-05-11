@@ -2,8 +2,8 @@ from random import choice, randint
 from string import ascii_uppercase
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
-from models import Base, StudentModel, GroupModel, CourseModel
-from engine_data import engine_data
+from Flask_app.models import Base, StudentModel, GroupModel, CourseModel
+from Flask_app.engine_data import engine_data
 
 
 class CreateDBData:
@@ -34,7 +34,7 @@ class CreateDBData:
     def create_students(cls):
         students = []
 
-        for _ in range(20):
+        for _ in range(200):
             name = (choice(cls.f_name), choice(cls.l_name))
             students.append(name)
 
@@ -119,7 +119,7 @@ class CreateDBData:
 
 
         # I also tried this code, but it fills only 100 elements to DB. I have no idea why
-        # for _ in range(len(students)):
+        # for _ in range(students):
         #     cls.create_student_model(session=session, students=students, courses=courses)
 
 
